@@ -50,7 +50,7 @@ jobs:
           
       - name:  security scan with trivy
         run: |
-          trivy fs --format fs.html -o .
+          trivy fs --format table -o fs.html .
         
   
   docker:
