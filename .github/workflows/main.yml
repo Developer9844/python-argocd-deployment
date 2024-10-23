@@ -85,8 +85,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t developer9844/python-img:app-${{ github.run_number }} .
-          tags: developer9844/python-img:app-${{ github.run_number }}
-  
+    
       # Install and run Trivy to scan the built image
       - name: Install Trivy
         run: |
