@@ -16,7 +16,7 @@ permissions:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  build_and_test:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -44,26 +44,20 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-            
-  unit_test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install dependencies
+      - name: Run tests with pytest
+        run: pytest
+      - name: Install Trivy for security scan
         run: |
-          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
-          
-      - name:  security scan with trivy
-        run: |
-          trivy fs --format table -o fs.html .
-        
+
+      - name: Security scan with Trivy
+        run: trivy fs --format table -o fs.html .
   
   docker:
-    needs: unit_test 
+    needs: build_and_test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -87,12 +81,12 @@ jobs:
           docker build -t developer9844/python-img:app-${{ github.run_number }} .
     
       # Install and run Trivy to scan the built image
-      - name: Install Trivy
-        run: |
-          sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update && sudo apt-get install -y trivy
+      # - name: Install Trivy
+      #   run: |
+      #     sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+      #     wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+      #     echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+      #     sudo apt-get update && sudo apt-get install -y trivy
   
       - name: Scan Docker image for vulnerabilities
         run: trivy image --severity HIGH,CRITICAL developer9844/python-img:app-${{ github.run_number }}
@@ -103,7 +97,7 @@ jobs:
         run: | 
           docker push developer9844/python-img:app-${{ github.run_number }}
           
-  modifygit:
+  modify_git:
     needs: docker
     runs-on: ubuntu-latest
     steps:
