@@ -83,10 +83,8 @@ jobs:
   
       # Build the Docker image (without pushing)
       - name: Build Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: false
+        run: |
+          docker build -t developer9844/python-img:app-${{ github.run_number }} .
           tags: developer9844/python-img:app-${{ github.run_number }}
   
       # Install and run Trivy to scan the built image
@@ -103,12 +101,8 @@ jobs:
       # Push the image only if the scan is successful
       - name: Push Docker image
         if: success()
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: developer9844/python-img:app-${{ github.run_number }}
-
+        run: | 
+          docker push developer9844/python-img:app-${{ github.run_number }}
           
   modifygit:
     needs: docker
@@ -118,18 +112,18 @@ jobs:
         name: changing the deployment of git repo
         with:
           repository: 'Developer9844/App-manifest-'
-          token: ${{ secrets.GIT_PASSWORD }}
+          token: $GIT_PASSWORD
       - name: modify the image
         run: |
           git config user.email d3692094@gmail.com
-          git config user.name Developer9844
+          git config user.name $GIT_USERNAME
           pwd
           cat deployment.yaml
           pwd
           sed -i "s+developer9844/python-img.*+developer9844/python-img:app-$RUN_NUMBER+g" deployment.yaml
           cat deployment.yaml
           git add .
-          git commit -m 'Done  by Github Actions   Job changemanifest: ${{ github.run_number }}'
+          git commit -m 'Done  by Github Actions   Job changemanifest: $RUN_NUMBER'
           git push origin main
         env:
           GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
