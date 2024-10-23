@@ -87,12 +87,12 @@ jobs:
           docker build -t developer9844/python-img:app-${{ github.run_number }} .
     
       # Install and run Trivy to scan the built image
-      # - name: Install Trivy
-      #   run: |
-      #     sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-      #     wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-      #     echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-      #     sudo apt-get update && sudo apt-get install -y trivy
+      - name: Install Trivy
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
   
       - name: Scan Docker image for vulnerabilities
         run: trivy image --severity HIGH,CRITICAL developer9844/python-img:app-${{ github.run_number }}
